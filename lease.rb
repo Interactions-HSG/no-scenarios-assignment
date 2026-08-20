@@ -1,3 +1,7 @@
+# A lease held by one holder at a time, renewed while the work continues.
+#
+# The storage is settled: +store+ has +compare_and_set+ and +read+. +acquire+
+# and +renew+ are the parts with a decision in them.
 class Lease
   def initialize(store, key, ttl_s, now = -> { Time.now.to_f })
     @store = store
@@ -6,21 +10,13 @@ class Lease
     @now = now
   end
 
-  # Take the lease if nobody holds it, or if whoever did has let it expire.
+  # True if this holder now owns the lease.
   def acquire(holder)
-    current = @store.read(@key)
-    if current.nil? || current[:expires] <= @now.call
-      @store.write(@key, { holder: holder, expires: @now.call + @ttl_s })
-      return true
-    end
-    current[:holder] == holder
+    raise NotImplementedError
   end
 
-  # Push the expiry out again.
+  # Extend a lease this holder already owns.
   def renew(holder)
-    current = @store.read(@key)
-    return false unless current && current[:holder] == holder
-    @store.write(@key, { holder: holder, expires: @now.call + @ttl_s })
-    true
+    raise NotImplementedError
   end
 end
